@@ -13,7 +13,8 @@ Incredibly, performance does not degrade significantly in smaller models with so
 As good as these results are, the quantitative measures undersell the accuracy. Many of the test failures are a result of ambiguity with the human-verified labeling. Or, in other words, my laziness. With some effort cleaning up contradictions in the benchmark labels, the scores would be even higher.
 
 Indeed, it is tough to find an exact comparison point to human-level tagging because, in my experience, human taggers are error-prone and idiosyncratic. While LLM tagging results also vary from model to model and run to run, they are consistent in comparison to the varying results you get from even the same person week to week. With such stellar performance at relatively little engineering effort, LLMs look like they will be a key tool going forward for data governance in the enterprise.
- 
+
+
 The rest of this write-up breaks down how I set up this initial experiment, dives further into the results, and discusses where further work is headed. It was fascinating to see LLMs routinely surface creative and thought-provoking privacy findings; there is a lot more to explore.
 
 <figure>
@@ -104,7 +105,7 @@ About half of these findings were straightforward to validate. "This is a custom
 
 The remaining half did not have clear-cut category tags. Categories like `bank-information` were especially tough to evaluate because the boundaries of the categories are fuzzy. Is an account balance bank information or should a separate category for purchase history be created?
 
-Even a seemingly straightforward category like "country" poses ontological questions. Obviously, a field named `country` should be tagged as such. But what about a field that contains a locale, like the locale used for setting a website's default language? Locale settings are specified with language and territory identifiers (e.g. en_AU or cs_CZ); so, they are literally the names of countries. Further, locale settings would strongly correlate to a user's country of residence. Even further, this sort of setting is useful for device fingerprinting, contributing to identifiability risk. Maybe it should be tagged `device-information`?
+Even a seemingly straightforward category like "country" poses ontological questions. Obviously, a field named `country` should be tagged as such. But what about a field that contains a locale, like the locale used for setting a website's default language? Locale settings are specified with language and territory identifiers (e.g. en_AU or cs_CZ); so, they are literally the names of countries. Further, locale settings would strongly correlate to a user's country of residence. On the other hand, the most relevant privacy risk from a local string device fingerprinting. Maybe it should be tagged `device-information`?
 
 For the purpose of this exploratory test, I sidestep these issues by adding an additional `<maybe>` designation to tags. Fields marked `<maybe>` were neither counted for nor against classifiers in the results. About 20% of tags receive this designation.
 

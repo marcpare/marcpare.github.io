@@ -24,3 +24,7 @@ for page in "${pages[@]}"; do
        --directory-prefix="$output_dir" \
        "$page"
 done
+
+# HACK:
+# replace "http://localhost:8123/embed" with "/embed.html"
+find "$output_dir" -type f -exec grep -Iq . {} \; -and -exec sed -i '' 's|http://localhost:8123/embed|/embed.html|g' {} +
