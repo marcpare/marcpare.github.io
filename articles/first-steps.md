@@ -249,7 +249,7 @@ Not all findings were positive. There were a good number of convincing-but-incor
 
 Below, I embed a selection of failures where you can observe them in situ:
 
-<iframe class="p-8" src="http://127.0.0.1:5000/embed" width="1200" height="630" scrolling="no"></iframe>
+<iframe class="p-8" src="/embed" width="1200" height="630" scrolling="no"></iframe>
 
 Future Work
 -----------
