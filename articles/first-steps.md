@@ -272,8 +272,14 @@ I would love to have some real datasets in hand to push this work further.
 
 Updates to the project should land in the linked Github repository. So, give it a star to follow along:
 
-<!-- Place this tag where you want the button to render. -->
-<a class="github-button" href="https://github.com/buttons/github-buttons" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" aria-label="Star buttons/github-buttons on GitHub">Star</a> &nbsp; <a class="github-button" href="https://github.com/buttons/github-buttons/subscription" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-eye" data-size="large" aria-label="Watch buttons/github-buttons on GitHub">Watch</a> &nbsp; <a class="github-button" href="https://github.com/buttons/github-buttons/discussions" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-comment-discussion" data-size="large" aria-label="Discuss buttons/github-buttons on GitHub">Discuss</a>
+
+<a class="github-button" href="https://github.com/marcpare/marcpare.github.io" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" aria-label="Star marcpare/marcpare.github.io on GitHub">Star</a> &nbsp;
+<a class="github-button" href="https://github.com/marcpare/marcpare.github.io/subscription" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-eye" data-size="large" aria-label="Watch marcpare/marcpare.github.io on GitHub">Watch</a> &nbsp;
+<a class="github-button" href="https://github.com/marcpare/marcpare.github.io/discussions" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-comment-discussion" data-size="large" aria-label="Discuss marcpare/marcpare.github.io on GitHub">Discuss</a>
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+
+
 
 <!-- Place this tag in your head or just before your close body tag. -->
 <script async defer src="https://buttons.github.io/buttons.js"></script>
