@@ -1,0 +1,262 @@
+<html class="dark">
+    <head>
+        
+        <link rel="stylesheet" href="../static/main.css">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+        <style>
+            .do-hyeon-regular {
+                font-family: "Do Hyeon", sans-serif;
+                font-weight: 400;
+                font-style: normal;
+            }
+
+            .roboto-mono-n7 {
+                font-family: "Roboto Mono", monospace;
+                font-optical-sizing: auto;
+                font-weight: 400;
+                font-style: normal;
+            }
+
+            .roboto-n7 {
+                font-family: "Roboto", sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 300;
+                font-style: normal;
+                font-variation-settings:
+                    "wdth" 300;
+                }
+
+            body {
+                /* font-family:ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+                color: rgba(255, 255, 255, 0.81); */
+            }
+
+            .prose img {
+                max-width: none !important;
+            }
+
+            .prose .image-caption {
+                margin-top: -40px;
+                padding-left: 80px; 
+                
+            }
+
+        </style>
+    </head>
+    <body class=" bg-black">
+        
+
+<div class="mx-auto w-320 ring-1 ring-zinc-300/20 px-8">
+
+    <div class="text-white py-4 flex items-center">
+
+        <img class="inline-block"src="../static/me-pixel-32.png" width="32" /><span class="inline-block px-3 text-zinc-400">/</span></span><span class="inline-block">ai-privacy-engineer</span><span class="inline-block px-3 text-zinc-400">/</span><span class="inline-block">first-steps</span>
+
+        <!-- <span class="do-hyeon-regular font-bold text-xl inline-block pt-1">#7</span><span class="inline-block px-3 text-zinc-400">/</span><span class="inline-block">Articles</span> -->
+
+    </div>
+
+    <div class="prose dark:prose-invert mt-12" style="position: relative;">
+        <h1>Sensitive Data Discovery with LLMs</h1>
+<p>Can you point an LLM at your database and ask it to tag any sensitive data?</p>
+<p>I’ve been benchmarking the performance of the latest LLMs on this task, and, to spoil the surprise, the answer is quite close to &quot;yes&quot;. Frontier models achieve ~80% recall and &gt;80% precision tagging complex, realistic database schemas.</p>
+<p>In other words, LLMs found around 4 out of 5 sensitive fields in the test sets, only mistakingly marking 1 out 5 along the way.</p>
+<p>Incredibly, performance does not degrade significantly in smaller models with some, like Alibaba's QwQ-32B, nearly matching the performance of larger models (~80% recall and &gt;70% precision). A number of small models actually outperform OpenAI's GPT-4o!</p>
+<p>As good as these results are, the quantitative measures undersell the accuracy. Many of the test failures are a result of ambiguity with the human-verified labeling. Or, in other words, my laziness. With some effort cleaning up contradictions in the benchmark labels, the scores would be even higher.</p>
+<p>Indeed, it is tough to find an exact comparison point to human-level tagging because, in my experience, human taggers are error-prone and idiosyncratic. While LLM tagging results also vary from model to model and run to run, they are consistent in comparison to the varying results you get from even the same person week to week. With such stellar performance at relatively little engineering effort, LLMs look like they will be a key tool going forward for data governance in the enterprise.</p>
+<p>The rest of this write-up breaks down how I set up this initial experiment, dives further into the results, and discusses where further work is headed. It was fascinating to see LLMs routinely surface creative and thought-provoking privacy findings; there is a lot more to explore.</p>
+<figure>
+
+<p><img src="../static/zoom-out.png" alt="zoom" title="None" width="1200" /></p>
+</figure>
+
+<figcaption style="padding-left: 50px; margin-top: -50px; ">
+A glimpse at the hundreds of classification tasks in the custom workbench developed for this experiment.
+</figcaption>
+
+<h2>Background - Why Measure Sensitive Data Discovery?</h2>
+<p>A common task for privacy engineers is to identify which classes of sensitive data a service handles. For example, are customer phone numbers making their way in the company-wide Tableau instance? At scale, this can mean reviewing millions of data fields, searching for just a few findings.</p>
+<p>This seems like the sort of task an LLM should excel at. The patterns that identify sensitive data have already been shown to be possible to tease out with conventional techniques: <a href="https://blog.x.com/engineering/en_us/topics/insights/2021/fusing-elasticsearch-with-neural-networks-to-identify-data">engineers at Twitter performed this task at ~80% &quot;top-10 accuracy&quot;</a> with 1D convolutional networks. LLMs not only supercharge the underlying mechanism for pattern recognition, they bring along a &quot;general knowledge about the world&quot; that is useful. Most excitingly, LLMs allow end-users to customize the classifications without re-training the model.</p>
+<p>Indeed, it takes only a single-line prompt to get convincing-looking output for this task: &quot;list all sensitive data in this database schema&quot;.</p>
+<p>But is it correct? Two years ago, in my initial experiments with open source models (Llama 2) these convincing outputs were rife with hallucinations and unpredictable.</p>
+<p>A lot has changed since then, and I decided to put a dozen state of the art models to the test tagging personal data in a realistic data warehouse.</p>
+<h2>Test Dataset - Building realistic synthetic schemas</h2>
+<p>So how do we go about assembling a realistic database schema to tag?</p>
+<p>As a first cut, I employ a trick picked up from doing vendor assessments: use the OpenAPI specification for a SaaS API.</p>
+<p>The response structure for an API parallels the schema for a database closely. Indeed, in the OpenAPI specification response structures are defined with elements actually called <code>&lt;schema&gt;</code>.</p>
+<p>Further, it turns out that SaaS APIs for products used by the enterprise can balloon quickly in scope and complexity, just like a real-life data warehouse. Even knowing this, I still gathered over 1,000 OpenAPI specification files before realizing that just one would be enough for a first test.</p>
+<p>For this test, I use Stripe's OpenAPI specification as a stand-in for a database schema.</p>
+<p>Stripe’s APIs cover twenty different products and contain hundreds of separate <schema> objects. These schemas contain an unexpected variety of data. Did you know that flight records find their way onto Stripe’s servers and are accessible via API?</p>
+<p><img src="../static/flight-info.png" alt="Stripe" title="None" width="900" /></p>
+<p>Unrolling Stripe's OpenAPI spec results in 775 schemas, containing 2,183 separate fields to tag. I performed AI-assisted discovery to identify benchmark tags, finding 21 classes of privacy-relevant data.</p>
+<p>From there, I boil down the benchmark task to these 18 classes:</p>
+<table>
+<tr>
+<td class="prose dark:prose-invert">
+
+<ul>
+<li>Email</li>
+<li>Phone Number</li>
+<li>IP Address</li>
+<li>Bank Information</li>
+<li>Credit Card Information</li>
+<li>Government ID</li>
+</ul>
+</td>
+<td class="prose dark:prose-invert">
+
+<ul>
+<li>Full Address</li>
+<li>State</li>
+<li>Street Address</li>
+<li>City</li>
+<li>Postal Code</li>
+<li>Authentication Credential</li>
+</ul>
+</td>
+<td class="prose dark:prose-invert">
+
+<ul>
+<li>Person Name</li>
+<li>Date of Birth</li>
+<li>Browser Info</li>
+<li>Device Info</li>
+<li>Geolocation</li>
+<li>URL</li>
+</ul>
+</td>
+</tr>
+</table>
+
+<p>This results in overall 454 fields needing to be tagged and 1,729 that should not be tagged, providing a useful signal for false positives.</p>
+<p>About half of these findings were straightforward to validate. &quot;This is a customer's name&quot; or &quot;This is a customer's phone number&quot;.</p>
+<p>The remaining half did not have clear-cut category tags. Categories like <code>bank-information</code> were especially tough to evaluate because the boundaries of the categories are fuzzy. Is an account balance bank information or should a separate category for purchase history be created?</p>
+<p>Even a seemingly straightforward category like &quot;country&quot; poses ontological questions. Obviously, a field named <code>country</code> should be tagged as such. But what about a field that contains a locale, like the locale used for setting a website's default language? Locale settings are specified with language and territory identifiers (e.g. en_AU or cs_CZ); so, they are literally the names of countries. Further, locale settings would strongly correlate to a user's country of residence. Even further, this sort of setting is useful for device fingerprinting, contributing to identifiability risk. Maybe it should be tagged <code>device-information</code>?</p>
+<p>For the purpose of this exploratory test, I sidestep these issues by adding an additional <code>&lt;maybe&gt;</code> designation to tags. Fields marked <code>&lt;maybe&gt;</code> were neither counted for nor against classifiers in the results. About 20% of tags receive this designation.</p>
+<h2>Test Classifier</h2>
+<p>The classifier for this test is as simple as possible: a single prompt per schema that outputs all identified tags.</p>
+<p>The prompt takes the following structure:</p>
+<ol>
+<li>Problem description – describe the tagging task</li>
+<li>Output format definition</li>
+<li>Taxonomy definition – list all the classes to identify</li>
+<li>Schema to tag</li>
+</ol>
+<p>I run this prompt against each schema in the test set. The repeated structure at the start of the prompts (sections 1, 2, and 3) means the task benefits significantly from prompt caching.</p>
+<p>I define an XML-like output format that I parse out with regular expressions. While Structured Output support would have been a natural fit, I avoided it for now in case the varying level of support for this feature across model providers significantly affected results.</p>
+<p>I run the classifier once with the default OpenRouter temperature setting of <code>1.0</code>.</p>
+<h2>Prompt Tuning</h2>
+<p>To refine the prompt, I visualize all of the AI findings, comparing tags by different models.</p>
+<p>I make an attempt to improve the prompt based on errors found from this visualization. I try not to add prompt instructions that overfit the evaluation set (e.g. I avoid overly specific instructions like “don’t tag the field named accept_future_capabilities”).</p>
+<p>Interestingly, it is possible to have LLMs improve prompts themselves by asking them to modify the prompt after making an error. The final prompt ends up looking like this:</p>
+<blockquote>
+<p>You are an expert in privacy law tasked with tagging sensitive data fields in a database schema.</p>
+<p>Below, you will be given a database schema in the section marked {{schema}} and a tagging taxonomy in the section marked {{taxonomy}}.</p>
+<blockquote>
+</blockquote>
+<p>Your task is to meticulously review each field in the provided database schema against the sensitive data taxonomy.</p>
+<p>For each field, determine if it matches any of the taxonomy tags.</p>
+<p>Ensure that every field is considered individually and exhaustively before moving on to the next. Do not skip any fields. Output a classification for each field that can be tagged, following the specified XML format.</p>
+<p>After the classification, output a short rationale for the classification.</p>
+<p>After your rationale, summarize your confidence in the tag you have assigned to the field. Output this as &quot;definitely&quot; or &quot;maybe&quot;. Output &quot;definitely&quot; if you are more than 90% confident in the tag.</p>
+<p>Output the classifications across six lines according to the following XML format:</p>
+<p>{{ format }}</p>
+<p>Some additional guidelines for tagging:</p>
+<ul>
+<li><p>Only tag fields that DIRECTLY contain sensitive data as defined in the taxonomy. Do not tag fields that merely indicate the existence or validation status of sensitive data that is stored elsewhere. The field itself must hold the sensitive information.</p>
+</li>
+<li><p>If fields constitute a part of sensitive data, such as part of a full address (street name), part of a credit card number (last 4 digits), tag the field with the appropriate taxonomy tag.</p>
+</li>
+<li><p>Do not tag fields that are related to the configuration of collection of sensitive data. For example, do not tag a field like <code>should_collect_phone_number</code> as <code>user.contact.phone_number</code>.</p>
+</li>
+</ul>
+<p>The tagging taxonomy is as follows:</p>
+<p>{{taxonomy}}</p>
+<p>The schema to tag is as follows:</p>
+<p>{{schema}}</p>
+</blockquote>
+<h2>Results</h2>
+<h3>Accuracy</h3>
+<p><img src="../static/accuracy.png" alt="fig2" title="None" width="900" /></p>
+<p>Frontier models achieve ~80% recall (79.1) and &gt;80% (81.2) precision tagging the benchmark dataset.</p>
+<p>In other words, LLMs found around 4 out of 5 sensitive fields in the test sets, only mistakingly marking 1 out 5 along the way.</p>
+<p>Incredibly, performance does not degrade significantly in smaller models with some, like Alibaba's QwQ-32B, nearly matching the performance of larger models (~80% recall and &gt;70% precision). A number of small models actually outperform OpenAI's GPT-4o!</p>
+<p>Thinking models like 4o and R1 do not significantly improve the results. Intuitively, this suggests that there is only so much signal for field classification from metadata analysis, which additional token generation doesn't do anything to tease out.</p>
+<p>All together, It looks likely that acceptable performance will be possible from locally run models. This is especially appealing for this task as it means it can be run without sending potentially sensitive database schemas over the wire.</p>
+<h3>Cost Effectiveness</h3>
+<p><img src="../static/cost.png" alt="fig1" title="None" width="900" /></p>
+<p>Here I plot the OpenRouter cost per million output tokens for each model in this benchmark. The appeal of small models stands out. While there is some small accuracy boost from some large models, it comes at a <strong>75X</strong> cost multiplier.</p>
+<p>Cost is a useful proxy for inference speed and hardware requirements. At a given budget, many small model instances can be run in parallel instead of a single large model, greatly reducing the time needed to classify a target dataset.</p>
+<h3>Fascinating findings</h3>
+<p>There were some positively thrilling findings generated by LLMs when asked to explain their rationale for tagging. Models were frequently able to make non-obvious observations about data fields and connect them to the desired data categories. Here is one for a field <code>dashboard.display_name</code>:</p>
+<blockquote>
+<p>Display names are often variations of or otherwise closely related to users' real names and can be used to identify them.</p>
+</blockquote>
+<p>Or <code>cancellation_details.reason</code>:</p>
+<blockquote>
+<p>Open-ended text field that can include personal details but doesn't clearly fit into another category.</p>
+</blockquote>
+<p>I was worried that this sort of creativity would lead to any free-form field being tagged. Interestingly, however, while some small models would over-reach in this way, most models were discerning with their creative links.</p>
+<p>The &quot;general knowledge&quot; contained in models came to bear as well. For example, a field named <code>whatsapp</code> was correctly flagged as a phone number. In another case, LLMs taught me a bit about the Brazilian financial system</p>
+<blockquote>
+<p>In Brazil, a boleto is a payment method that includes a unique identifier number used for tracking and processing payments.</p>
+</blockquote>
+<p>Indeed, this general knowledge was a great help to building the taxonomy of data categories to tag. Rather than have to manually review hundreds of schemas myself, I was able to run discovery prompts against the benchmark set, compiling a high signal-to-noise dataset that I could distill into a final taxonomy. Simply asking for &quot;any fields that would be relevant to a privacy engineering team&quot; worked quite well. To surface more categories, I tried prompt variations that enumerated data fields relevant to GDPR and then to CCPA. To cast a wider net, I described two of my favorite privacy risk frameworks – Daniel Solove's privacy harm categories from <em>Understanding Privacy</em> and LINDDUN's privacy threat model – as inspiration for the LLM.</p>
+<p>An unexpected type of data surfaced by this discovery work was data tracking fraud or account abuse in a user's account, a category of data eminently meaningful to privacy engineers:</p>
+<blockquote>
+<p>The details_code field contains a machine-readable code specifying the verification state for a user's document. This code could reveal information about the user's behavior, particularly if the reasons are related to fraud or unwanted activities.</p>
+</blockquote>
+<p>here's another:</p>
+<blockquote>
+<p>This field could hold data related to user behavior such as why a document validation failed. For example, a reason could be that the document was classified as hate speech.</p>
+</blockquote>
+<h3>Types of Failures Observed</h3>
+<p>Not all findings were positive. There were a good number of convincing-but-incorrect outputs as well. LLM failure modes are delightfully anthropomorphic.</p>
+<p><strong>Laziness</strong> – Smaller models will sometimes skip tagging a field in a schema, triggering a false negative. Sending a follow-up prompt to double-check will often lead them to surface the missing tag. This tendency is somewhat alleviated by adding the instruction to &quot;be thorough&quot;, but it is not a complete fix.</p>
+<p><strong>Over-reaching</strong> – Some models flag way too much with creative, low likelihood scenarios. Take this rationale for tagging a field called <code>secondary_color</code>:</p>
+<blockquote>
+<p>Color preferences, in combination with other data, could be revealing of user's identify if specific enough.</p>
+</blockquote>
+<p><strong>Spurious linking</strong> – In some cases, models will spuriously tag fields that relate to the general idea of one of the sensitive categories, like this field <code>avs_failure</code>:</p>
+<blockquote>
+<p>This Boolean references whether a transaction is declined if there is an incorrect ZIP/postal code, which is part of a user's address.</p>
+</blockquote>
+<p><strong>Nonsense Reasoning</strong> – Very small models get themselves twisted around sometimes, tagging a field, then explaining that the tag does not apply.</p>
+<blockquote>
+<p>The 'current_deadline' field in an integer representing a date, but none of its contents or context relate to IP. This tag is incorrect and should not be applied.</p>
+</blockquote>
+<p>Below, I embed a selection of failures where you can observe them in situ:</p>
+<iframe class="p-8" src="/embed.html" width="1200" height="630" scrolling="no"></iframe>
+
+<h2>Future Work</h2>
+<p>This work leaves many stones unturned!</p>
+<p>The benchmark dataset can be significantly expanded. It will be interesting to see how performance varies across a broad range of SaaS API schemas. Does this approach hold up to a much more diverse testing set?</p>
+<p>Prompt engineering and system design were only superficially explored. Multi-stage prompting, like asking models to validate their results, could further improve accuracy. It may be possible to alleviate the problems of small models by having them tag only one field at a time, rather than entire schemas. I should probably vary temperature settings rather than use the OpenRouter default.</p>
+<p>I am most interested in seeing how small of models can succeed in this task. Could a fine-tune or distillation step further reduce effective model sizes? Running enterprise-scale data discovery from desktop compute resources should be possible.</p>
+<p>Big picture, taking this interesting capability of LLMs from the lab to the enterprise involves some important supporting infrastructure. Data discovery is not a one-size-fits-all capability; different businesses have dramatically different privacy threat models, which require contextualizing findings. LLMs could be great at this! Though it will require some thoughtful workflow design and further engineering for this sort of capability.</p>
+<p>If this work has been interesting to you, please get in touch:</p>
+<p><a href="mailto:marc@getnumberseven.com">marc@getnumberseven.com</a></p>
+<p>I would love to have some real datasets in hand to push this work further.</p>
+<p>Updates to the project should land in the linked Github repository. So, give it a star to follow along:</p>
+<!-- Place this tag where you want the button to render. -->
+
+<p><a class="github-button" href="https://github.com/buttons/github-buttons" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" aria-label="Star buttons/github-buttons on GitHub">Star</a>   <a class="github-button" href="https://github.com/buttons/github-buttons/subscription" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-eye" data-size="large" aria-label="Watch buttons/github-buttons on GitHub">Watch</a>   <a class="github-button" href="https://github.com/buttons/github-buttons/discussions" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-comment-discussion" data-size="large" aria-label="Discuss buttons/github-buttons on GitHub">Discuss</a></p>
+<!-- Place this tag in your head or just before your close body tag. -->
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+
+
+    </div>
+
+    <div class="pt-20">
+    </div>
+    
+</div>
+
+
+
+    </body>
+</html>

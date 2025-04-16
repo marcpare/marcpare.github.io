@@ -1,3 +1,26 @@
+#!/bin/bash
 
+# TODO: the embed link had to be manually adjusted
+# TODO: would be nice to not have to juggle the two localhost urls
 
-# walk the localhost site with wget and save in the /output directory
+# Export the page /articles/first-steps with wget to the site/ directory
+
+pages=(
+    "http://localhost:8123/articles/first-steps"
+    "http://127.0.0.1:5000/embed"
+)
+
+output_dir="site"
+
+rm -rf $output_dir
+
+for page in "${pages[@]}"; do
+  wget --no-clobber \
+       --page-requisites \
+       --html-extension \
+       --convert-links \
+       --domains localhost \
+       --no-host-directories \
+       --directory-prefix="$output_dir" \
+       "$page"
+done
