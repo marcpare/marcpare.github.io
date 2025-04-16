@@ -10,7 +10,7 @@ pages=(
     "http://127.0.0.1:5000/embed"
 )
 
-output_dir="site"
+output_dir="docs"
 
 rm -rf $output_dir
 
