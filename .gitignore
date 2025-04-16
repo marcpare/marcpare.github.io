@@ -1,0 +1,6 @@
+.envrc
+data/
+**/__pycache__/
+venv/
+node_modules/
+.DS_Store

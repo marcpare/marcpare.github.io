@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+        <div class="mx-auto w-140 ring-1 ring-zinc-300/20 px-8">
+
+            <div class="grid grid-cols-12 mt-24">
+                <div class="col-span-3 flex items-center justify-center">
+                    <p class="text-white text-4xl font-bold text-center do-hyeon-regular">#7</p>
+                </div>
+                <div class="col-span-9 flex items-center">
+                    <h2 class="text-white text-xl font-bold text-left roboto-mono-n7 pl-4">Privacy and security at scale.</h2>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-12 mt-8 flex items-center prose dark:prose-invert">
+                <div class="col-span-3">
+                    <!-- <img src="{{ url_for('static', filename='draft-me.png') }}" width="60px" alt="Number Seven" class="mx-auto"></img> -->
+                </div>
+                <div class="col-span-8 text-white pl-4 text-sm">
+                    <p class="mt-1 mb-1">by Marc-Antoine Par&eacute</p>
+                    <p class="mt-1"><a href="mailto:marc@getnumberseven.com">marc@getnumberseven.com</a></p>
+                    <!-- <p class="mt-6">[LinkedIn]</p> -->
+                </div>
+            </div>
+
+            <div class="mt-18 ml-4 text-white">
+                <h3 class="text-white text-2xl font-bold text-left roboto-mono-n7 mb-4">Articles</h3>
+
+                <div class="prose dark:prose-invert">
+
+                <h4 class="my-2"><a class="underline"href="/articles">Do LLMs make good privacy engineers? Yes.</a></h4>
+                <p class="">Results of exploratory benchmarking of LLMs on sensitive data discovery. They exhibit superhuman performance.</p>
+
+                <p class="text-right"><a href="/articles">Write-up</a> | <a href="/articles">Visualization</a></p>
+
+                <div>
+                    <img src="{{ url_for('static', filename='draft-viz-screenshot.png')}}" width="480px" alt="" class="mx-auto my-4"></img>
+                </div>
+
+                <h4 class="my-2"><a class="underline"href="/articles">Data Mapping at a Billion Dollar Self Driving Startup</a></h4>
+                <p class="">The large scale data mapping system I built at Cruise to maintain visibility on petabytes of sensitive data collected daily–location, imagery, and copious metadata. This work took place as Cruise was undergoing rapid growth during its launch of self-driving cars to the public.</p>
+                <p>Presented at USENIX PEPR</p>
+
+                <div class="embedded-video">
+                    <div class="player">
+                      <iframe title="YouTube video" class="large-12 medium-12 small-12 columns usenix-schedule-media" width="460" height="240" src="//www.youtube.com/embed/Y1pT-fPgIjk?width%3D745%26amp%3Bheight%3D420%26amp%3Btheme%3Ddark%26amp%3Bautoplay%3D0%26amp%3Bvq%3Dhd720%26amp%3Brel%3D0%26amp%3Bshowinfo%3D0%26amp%3Bmodestbranding%3D0%26amp%3Biv_load_policy%3D1%26amp%3Bcontrols%3D1%26amp%3Bautohide%3D2%26amp%3Bwmode%3Dopaque" frameborder="0" allowfullscreen=""></iframe>
+                    </div>
+                </div>
+            </div>
+
+            </div>
+        </div>
+{% endblock %}
